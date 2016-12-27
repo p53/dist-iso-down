@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+
+import re
+import logging
+import argparse
+import yaml
+import os
+import sys
+
+utility_name = os.path.splitext(os.path.basename(__file__))[0]
+script_path = os.path.realpath(__file__)
+dir_path = os.path.dirname(script_path)
+lib_path = '{}/{}'.format(dir_path, 'lib')
+
+sys.path.append(lib_path)
+
+import iso.remote.filer
+import iso.file
+import iso.version.filter as verfilter
+
+def main():
+    config = {}
+
+    logger = logging.getLogger('logger')
+    logger.setLevel(logging.INFO)
+    ch = logging.StreamHandler(sys.stdout)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    config_name = 'config_gen.yml'
+    config_path = '{}/{}'.format(dir_path, config_name)
+
+    logger.debug('Loading config file: %s', config_path)
+
+    conf = iso.config.Config(config_path)
+
+    iso_hosts = conf.config['iso_hosts']
+    iso_naming_stds = conf.config['iso_naming_stds']
+    allowed_virtualizations = conf.config['virtualizations'].keys()
+
+    allowed_distros = iso_naming_stds.keys()
+    allowed_syncs = ['all', 'major', 'latest', 'version']
+
+    logger.debug('Parsing arguments...')
+
+    parser = argparse.ArgumentParser(
+        prog=utility_name,
+        description="description: Utility for generating linux iso images"
+    )
+
+    parser.add_argument(
+        "-v",
+        "--version",
+        action='version',
+        version='%(prog)s 1.0'
+    )
+    parser.add_argument(
+        "-g",
+        "--generate",
+        help="how synchronize, major type requires -m",
+        dest='generate',
+        type=str,
+        choices=allowed_syncs,
+        required=True
+    )
+    parser.add_argument(
+        "-m",
+        "--major-version",
+        help="major version of distribution",
+        dest='major',
+        type=str,
+        default=''
+    )
+    parser.add_argument(
+        "-d",
+        "--distribution",
+        help="name of distribution",
+        dest='distribution',
+        type=str,
+        choices=allowed_distros,
+        required=True
+    )
+    parser.add_argument(
+        "-t",
+        "--virtualization",
+        help="type of virtualization",
+        dest='virtualization',
+        type=str,
+        choices=allowed_virtualizations,
+        required=True
+    )
+    parser.add_argument(
+        "-r",
+        "--distro-version",
+        help="specifig version of distro",
+        dest="dist_version",
+        type=str
+    )
+    parser.add_argument(
+        "--debug",
+        help="turning on debug messages",
+        dest='debug',
+        action='store_true'
+    )
+
+    results = parser.parse_args()
+
+    generate = results.generate
+    distribution = results.distribution
+    selected_version = results.major
+    virtualization = results.virtualization
+    selected_full_version = results.dist_version
+
+    if results.generate == 'major' and not results.major:
+        msg = "argument -m/--major-version is required when -s/--sync option is major"
+        parser.error(msg)
+    elif results.generate == 'major' and results.major:
+        distribution = results.distribution
+        selected_version = results.major
+
+        if not selected_version in iso_naming_stds[distribution].keys():
+            msg_fmt = "Major version {} of {}, not configured"
+            msg = msg_fmt.format(selected_version, distribution)
+            parser.error(msg)
+
+    if results.generate == 'version' and not results.dist_version:
+        msg = "argument -r/--distro-version is required when -g/--generate option is version"
+        parser.error(msg)
+    elif results.generate == 'version' and results.dist_version:
+        version_info = results.dist_version.split('.')
+
+        if not version_info[0] in iso_naming_stds[distribution].keys():
+            msg_fmt = "Major version {} of {}, not configured"
+            msg = msg_fmt.format(version_info[0], distribution)
+            parser.error(msg)
+
+    if results.debug:
+        logger.setLevel(logging.DEBUG)
+
+    host = iso_hosts[distribution]['host']
+    release_folder = iso_hosts[distribution]['release_folder']
+
+    remote_filer = iso.remote.filer.Filer('FTP', host)
+
+    logger.info('Selecting distribution, generate: %s, %s', distribution, generate)
+    logger.info('Connecting to FTP host: %s', host)
+
+    logger.debug('Getting versions from server...')
+
+    remote_filer.set_releases_location(release_folder)
+    entries = remote_filer.get_files()
+    all_versions = remote_filer.get_versions(entries)
+
+    check_versions = []
+
+    if generate == 'all':
+        check_versions = all_versions
+    elif generate == 'major':
+        check_versions = verfilter.Filter.filter_major_version(all_versions, selected_version)
+    elif generate == 'latest':
+        check_versions = verfilter.Filter.filter_latest(all_versions)
+    elif generate == 'version':
+        check_versions = verfilter.Filter.filter_version(all_versions, selected_full_version)
+
+    configured_versions = iso_naming_stds[distribution].keys()
+
+    allowed_versions = verfilter.Filter.filter_intersection(check_versions, configured_versions)
+
+    logger.debug('Versions checked for generation: %s', ', ' . join(allowed_versions))
+
+    remote_filer.generate(allowed_versions, [virtualization], distribution)
+
+if __name__ == "__main__":
+    main()

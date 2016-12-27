@@ -1,0 +1,73 @@
+packer:
+  bin_location: '/home/pipoth/packer'
+  template_location: '/home/pipoth/Software/ci-packer/templates'
+  kickstart:
+    http_ip: "192.168.0.216"
+    http_port: "8000"
+
+virtualizations:
+  'qemu':
+    folder: 'qemu'
+    format: 'qcow2'
+  'ami':
+    folder: 'virtualbox'
+    format: 'ova'
+  'vbox':
+    folder: 'virtualbox'
+    format: 'ova'
+
+iso_hosts:
+    'centos':
+        'host': 'ftp.sh.cvut.cz'
+        'release_folder': 'centos'
+    'ubuntu':
+        'host': 'releases.ubuntu.com'
+        'release_folder': 'releases'
+
+iso_naming_stds:
+    'centos':
+        '6':
+            'image_name': 'CentOS-{version}.{update}-{arch}-minimal.iso'
+            'iso_url': '{full_version}/isos/{arch}'
+            'dest': '/home/pipoth/OsImages'
+            'arch': 'x86_64'
+            'checksum_file': 'sha256sum.txt'
+            'checksum_type': 'sha256'
+            'virt_image_name': '{distribution}-{version}.{update}-{virt_type}'
+            'packer_working_dir': '{distribution}/{version}'
+            'packer_vars': 'vars/vars.json'
+            'packer_template': '{virt_type}.json'
+        '7':
+            'image_name': 'CentOS-{version}-{arch}-Minimal-{stamp_version}.iso'
+            'iso_url': '{full_version}/isos/{arch}'
+            'dest': '/home/pipoth/OsImages'
+            'arch': 'x86_64'
+            'checksum_file': 'sha256sum.txt'
+            'checksum_type': 'sha256'
+            'virt_image_name': '{distribution}-{version}.{update}-{virt_type}'
+            'packer_working_dir': '{distribution}/{version}'
+            'packer_vars': 'vars/vars.json'
+            'packer_template': '{virt_type}.json'
+    'ubuntu':
+        '16':
+            'image_name': 'ubuntu-{version}.{update}{dot}{stamp_version}-server-{arch}.iso'
+            'iso_url': '{full_version}'
+            'dest': '/home/pipoth/OsImages'
+            'arch': 'amd64'
+            'checksum_file': 'SHA256SUMS'
+            'checksum_type': 'sha256'
+            'virt_image_name': '{distribution}-{version}.{update}{dot}{stamp_version}-{virt_type}'
+            'packer_working_dir': '{distribution}/{version}.{update}'
+            'packer_vars': 'vars/vars.json'
+            'packer_template': '{virt_type}.json'
+        '14':
+            'image_name': 'ubuntu-{version}.{update}{dot}{stamp_version}-server-{arch}.iso'
+            'iso_url': '{full_version}'
+            'dest': '/home/pipoth/OsImages'
+            'arch': 'amd64'
+            'checksum_file': 'SHA256SUMS'
+            'checksum_type': 'sha256'
+            'virt_image_name': '{distribution}-{version}.{update}{dot}{stamp_version}-{virt_type}'
+            'packer_working_dir': '{distribution}/{version}.{update}'
+            'packer_vars': 'vars/vars.json'
+            'packer_template': '{virt_type}.json'

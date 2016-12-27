@@ -1,0 +1,39 @@
+iso_hosts:
+    'centos':
+        'host': 'ftp.sh.cvut.cz'
+        'release_folder': 'centos'
+    'ubuntu':
+        'host': 'releases.ubuntu.com'
+        'release_folder': 'releases'
+
+iso_naming_stds:
+    'centos':
+        '6':
+            'image_name': 'CentOS-{version}.{update}-{arch}-minimal.iso'
+            'iso_url': '{full_version}/isos/{arch}'
+            'dest': '/home/pipoth/Downloads'
+            'arch': 'x86_64'
+            'checksum_file': 'sha256sum.txt'
+            'checksum_type': 'sha256'
+        '7':
+            'image_name': 'CentOS-{version}-{arch}-Minimal-{stamp_version}.iso'
+            'iso_url': '{full_version}/isos/{arch}'
+            'dest': '/home/pipoth/Downloads'
+            'arch': 'x86_64'
+            'checksum_file': 'sha256sum.txt'
+            'checksum_type': 'sha256'
+    'ubuntu':
+        '16':
+            'image_name': 'ubuntu-{version}.{update}{dot}{stamp_version}-server-{arch}.iso'
+            'iso_url': '{full_version}'
+            'dest': '/home/pipoth/Downloads'
+            'arch': 'amd64'
+            'checksum_file': 'sha256sum.txt'
+            'checksum_type': 'sha256'
+        '14':
+            'image_name': 'ubuntu-{version}.{update}{dot}{stamp_version}-server-{arch}.iso'
+            'iso_url': '{full_version}'
+            'dest': '/home/pipoth/Downloads'
+            'arch': 'amd64'
+            'checksum_file': 'sha256sum.txt'
+            'checksum_type': 'sha256'

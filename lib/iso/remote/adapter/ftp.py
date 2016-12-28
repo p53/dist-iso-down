@@ -10,6 +10,8 @@ import shlex
 from pattern.singleton import Singleton
 import iso.config
 import iso.url
+import socket
+import time
 
 class FTP(metaclass=Singleton):
     ftp = ""
@@ -215,54 +217,77 @@ class FTP(metaclass=Singleton):
                 packer_working_dir = packer_working_dir_fmt.format(**packer_data)
                 packer_working_dir_full = '{}/{}'.format(packer_data['templates'], packer_working_dir)
 
-                packer_vars_file_name = packer_vars_file_fmt.format(**packer_data)
-                packer_template_name = packer_template_fmt.format(**packer_data)
-                packer_data['packer_vars_file_name'] = packer_vars_file_name
-                packer_data['packer_template_name'] = packer_template_name
+                if os.path.exists(packer_working_dir_full):
+                    packer_vars_file_name = packer_vars_file_fmt.format(**packer_data)
+                    packer_template_name = packer_template_fmt.format(**packer_data)
+                    packer_data['packer_vars_file_name'] = packer_vars_file_name
+                    packer_data['packer_template_name'] = packer_template_name
 
-                http_kickstart_working_dir = '{}/kickstart'.format(packer_working_dir_full)
+                    http_kickstart_working_dir = '{}/kickstart'.format(packer_working_dir_full)
 
-                packer_1 = '{binary} build -var-file={packer_vars_file_name}'
-                packer_var_1 = '-var "url_iso={http_url}" -var "checksum_type={checksum_type}" -var "url_checksum={http_checksum_url}"'
-                packer_var_2 = '-var "vm_name={vm_name}" -var "HTTPIP={HTTP_IP}"'
-                packer_var_3 = '-var "HTTPPort={HTTP_PORT}" -var "output_directory={output_directory}"'
-                packer_2 = '{packer_template_name}'
+                    packer_1 = '{binary} build -var-file={packer_vars_file_name}'
+                    packer_var_1 = '-var "url_iso={http_url}" -var "checksum_type={checksum_type}" -var "url_checksum={http_checksum_url}"'
+                    packer_var_2 = '-var "vm_name={vm_name}" -var "HTTPIP={HTTP_IP}"'
+                    packer_var_3 = '-var "HTTPPort={HTTP_PORT}" -var "output_directory={output_directory}"'
+                    packer_2 = '{packer_template_name}'
 
-                packer_cmd_fmt = '{} {} {} {} {}'.format(packer_1, packer_var_1, packer_var_2, packer_var_3, packer_2)
-                packer_cmd = packer_cmd_fmt.format(**packer_data)
+                    packer_cmd_fmt = '{} {} {} {} {}'.format(packer_1, packer_var_1, packer_var_2, packer_var_3, packer_2)
+                    packer_cmd = packer_cmd_fmt.format(**packer_data)
 
-                logger.info('Starting generation: %s', virt_image_name)
+                    logger.info('Starting generation: %s', virt_image_name)
 
-                packer_args = shlex.split(packer_cmd)
+                    packer_args = shlex.split(packer_cmd)
 
-                logger.info("Starting local HTTP kickstart server...")
+                    logger.info("Starting local HTTP kickstart server...")
 
-                http_kickstart = subprocess.Popen(
-                    ["/usr/bin/python", "-m", "SimpleHTTPServer"],
-                    cwd=http_kickstart_working_dir
-                )
+                    http_kickstart = subprocess.Popen(
+                        ["/usr/bin/python3", "-m", "http.server"],
+                        cwd=http_kickstart_working_dir
+                    )
 
-                logger.info("Starting packer...")
-                logger.debug("Packer command: %s", packer_cmd)
+                    time.sleep(3)
 
-                packer_proc = subprocess.Popen(
-                    packer_args,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    cwd=packer_working_dir_full,
-                    universal_newlines=True
-                )
+                    logger.info("Checking if HTTP server is running on {HTTP_IP}:{HTTP_PORT}".format(**packer_data))
 
-                for line in iter(packer_proc.stdout.readline,''):
-                    logger.debug(line.rstrip())
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    result = sock.connect_ex((packer_data['HTTP_IP'], int(packer_data['HTTP_PORT'])))
 
-                if http_kickstart.poll() is None:
-                    http_kickstart.terminate()
-                    logger.info("Stopped kickstart HTTP server")
+                    if result == 0:
+                       logger.info("HTTP is running")
+                       sock.close()
+                    else:
+                       logger.error("HTTP is not running on expected address")
+                       sys.exit(1)
 
-                if packer_proc.poll() is None:
-                    packer_proc.terminate()
+                    logger.info("Starting packer...")
+                    logger.debug("Packer command: %s", packer_cmd)
 
-                logger.info('Generation finished: %s', virt_image_name)
+                    try:
+                        packer_proc = subprocess.Popen(
+                            packer_args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            cwd=packer_working_dir_full,
+                            universal_newlines=True
+                        )
+                    except Exception as exc:
+                        logger.error(str(exc))
+                        sys.exit(1)
+
+                    for line in iter(packer_proc.stdout.readline,''):
+                        logger.debug(line.rstrip())
+
+                    if http_kickstart.poll() is None:
+                        http_kickstart.terminate()
+                        logger.info("Stopped kickstart HTTP server")
+
+                    if packer_proc.poll() is None:
+                        packer_proc.terminate()
+
+                    logger.info('Generation finished: %s', virt_image_name)
+                else:
+                    msg = 'Templates doesn\'t exist for {distribution} version {version}'.format(**packer_data)
+                    logger.info(msg)
+                    sys.exit()
             else:
                 logger.info("Skipping generation, already generated or not present on remote: %s", full_version)

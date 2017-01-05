@@ -3,3 +3,6 @@ ansible==2.2.0
 # this is required for EC2 functionality
 awscli==1.11.35
 boto3==1.4.3
+# python3-setuptools package is needed
+# python3-dev package is needed
+# libssl-dev package is needed

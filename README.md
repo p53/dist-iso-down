@@ -13,7 +13,7 @@ Installation:
 
   **Setup virtual environment:**
 
-    cd /opt/dist-iso-down
+    cd /opt/iso-imager
     virtualenv --no-site-packages venv
 
   **Activate virtual environment:**
@@ -24,7 +24,7 @@ Installation:
 
     pip install -r requirements.txt
 
-  For dist-iso-gen tool you must download packer and create packer templates.
+  For iso-imager-gen tool you must download packer and create packer templates.
   Paths to packer templates, names of generated images etc... are configured in config_gen.yml
 
 Usage:
@@ -39,27 +39,27 @@ Usage:
 
   This will download all versions of centos distribution:
 
-    /opt/dist-iso-down/dist-iso-down -s all -d centos
+    /opt/iso-imager/iso-imager-down -s all -d centos
 
   This will download latest version of ubuntu distribution:
 
-    /opt/dist-iso-down/dist-iso-down -s latest -d ubuntu
+    /opt/iso-imager/iso-imager-down -s latest -d ubuntu
 
   This will download all versions of centos distribution with major version 6:
 
-    /opt/dist-iso-down/dist-iso-down -s major -d centos -m 6
+    /opt/iso-imager/iso-imager-down -s major -d centos -m 6
 
   This will generate all versions of centos to virtualbox image (type of image is configured in config):
 
-    /opt/dist-iso-down/dist-iso-gen -s all -d centos -t vbox
+    /opt/iso-imager/iso-imager-gen -s all -d centos -t vbox
 
   This will generate latest version of ubuntu distribution to qemu image:
 
-    /opt/dist-iso-down/dist-iso-gen -s latest -d ubuntu -t qemu
+    /opt/iso-imager/iso-imager-gen -s latest -d ubuntu -t qemu
 
   Running in cron (create also logrotate configuration to rotate logs):
 
-    0 */12 * * * . /opt/dist-iso-down/venv/bin/activate && /opt/dist-iso-down/dist-iso-down -s all -d ubuntu 2>&1 >> /var/log/dist-iso-down.log
+    0 */12 * * * . /opt/iso-imager/venv/bin/activate && /opt/iso-imager/iso-imager-down -s all -d ubuntu 2>&1 >> /var/log/iso-imager.log
 
 ### Credits:
 

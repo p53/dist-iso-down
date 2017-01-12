@@ -5,7 +5,7 @@ Installation:
 
   **Download source:**
 
-    git clone URL /opt/dist-iso-down
+    git clone URL /opt/iso-imager
 
   **Install virtualenv:**
 

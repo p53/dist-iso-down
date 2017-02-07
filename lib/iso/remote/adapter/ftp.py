@@ -216,6 +216,7 @@ class FTP(metaclass=Singleton):
 
                 packer_working_dir = packer_working_dir_fmt.format(**packer_data)
                 packer_working_dir_full = '{}/{}'.format(packer_data['templates'], packer_working_dir)
+                ansible_working_dir_full = '{}/../../ansible'.format(packer_working_dir_full)
 
                 if os.path.exists(packer_working_dir_full):
                     packer_vars_file_name = packer_vars_file_fmt.format(**packer_data)
@@ -233,10 +234,12 @@ class FTP(metaclass=Singleton):
 
                     packer_cmd_fmt = '{} {} {} {} {}'.format(packer_1, packer_var_1, packer_var_2, packer_var_3, packer_2)
                     packer_cmd = packer_cmd_fmt.format(**packer_data)
+                    ansible_roles_cmd = 'ansible-galaxy install -f -r requirements.yml -p {}/roles'.format(ansible_working_dir_full)
 
                     logger.info('Starting generation: %s', virt_image_name)
 
                     packer_args = shlex.split(packer_cmd)
+                    ansible_roles_args = shlex.split(ansible_roles_cmd)
 
                     logger.info("Starting local HTTP kickstart server...")
 
@@ -258,6 +261,23 @@ class FTP(metaclass=Singleton):
                     else:
                        logger.error("HTTP is not running on expected address")
                        sys.exit(1)
+
+                    logger.info("Downloading roles")
+
+                    try:
+                        ansible_roles_proc = subprocess.Popen(
+                            ansible_roles_args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            cwd=ansible_working_dir_full,
+                            universal_newlines=True
+                        )
+                    except Exception as exc:
+                        logger.error(str(exc))
+                        sys.exit(1)
+
+                    for line in iter(ansible_roles_proc.stdout.readline,''):
+                        logger.debug(line.rstrip())
 
                     logger.info("Starting packer...")
                     logger.debug("Packer command: %s", packer_cmd)

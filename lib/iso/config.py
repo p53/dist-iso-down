@@ -2,7 +2,8 @@ import yaml
 import logging
 from pattern.singleton import Singleton
 
-class Config(metaclass=Singleton):
+class Config():
+    __metaclass__ = Singleton
     def __init__(self, config_path):
         logger = logging.getLogger('logger')
 

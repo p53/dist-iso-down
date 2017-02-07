@@ -13,7 +13,8 @@ import iso.url
 import socket
 import time
 
-class FTP(metaclass=Singleton):
+class FTP():
+    __metaclass__ = Singleton
     ftp = ""
 
     def __init__(self, ftp_host):
@@ -244,7 +245,7 @@ class FTP(metaclass=Singleton):
                     logger.info("Starting local HTTP kickstart server...")
 
                     http_kickstart = subprocess.Popen(
-                        ["/usr/bin/python3", "-m", "http.server"],
+                        ["/usr/bin/python2.7", "-m", "SimpleHTTPServer"],
                         cwd=http_kickstart_working_dir
                     )
 

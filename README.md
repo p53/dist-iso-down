@@ -1,7 +1,7 @@
 Installation:
 =========
 
-  Compatible with python3
+  Compatible with python2
 
   **Download source:**
 
@@ -51,11 +51,15 @@ Usage:
 
   This will generate all versions of centos to virtualbox image (type of image is configured in config):
 
-    /opt/iso-imager/iso-imager-gen -s all -d centos -t vbox
+    /opt/iso-imager/iso-imager-gen -g all -d centos -t vbox
 
   This will generate latest version of ubuntu distribution to qemu image:
 
-    /opt/iso-imager/iso-imager-gen -s latest -d ubuntu -t qemu
+    /opt/iso-imager/iso-imager-gen -g latest -d ubuntu -t qemu
+
+  This will generate specific version of ubuntu distribution to qemu image:
+
+    /opt/iso-imager/iso-imager-gen -g version -r 16.04.1 -d ubuntu -t qemu
 
   Running in cron (create also logrotate configuration to rotate logs):
 

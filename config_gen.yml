@@ -2,7 +2,7 @@ packer:
   bin_location: '/home/pipoth/packer'
   template_location: '/home/pipoth/Software/ci-packer/templates'
   kickstart:
-    http_ip: "192.168.0.216"
+    http_ip: "192.168.0.13"
     http_port: "8000"
 
 virtualizations:
